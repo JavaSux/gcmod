@@ -8,9 +8,8 @@ use crate::{
     format_u64,
     format_usize,
     NumberStyle,
+    sections::Section,
 };
-
-use crate::sections::Section;
 
 pub const APPLOADER_OFFSET: u64 = 0x2440;
 const APPLOADER_DATE_SIZE: usize = 0x0A;
@@ -35,7 +34,7 @@ impl Apploader {
         reader.seek(SeekFrom::Start(offset))?;
         let mut date = String::new();
         reader.take(APPLOADER_DATE_SIZE as u64).read_to_string(&mut date)?;
-        
+
         reader.seek(SeekFrom::Current(6))?; // it's just fluff
 
         let entry_point = reader.read_u32::<BigEndian>()? as u64;

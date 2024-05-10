@@ -1,7 +1,13 @@
 use std::io::{Write, Seek, SeekFrom, Read, self};
 
-use crate::{format_u64, format_usize, NumberStyle, parse_as_u64, extract_section};
-use crate::sections::Section;
+use crate::{
+    extract_section,
+    format_u64,
+    format_usize,
+    parse_as_u64,
+    sections::Section,
+    NumberStyle,
+};
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SegmentType {

@@ -1,20 +1,25 @@
-use std::{cmp, iter};
-use std::fs::{File, read_dir};
-use std::io::{self, BufReader, Write};
-use std::path::{self, Path, PathBuf};
-use std::sync::OnceLock;
-
-use crate::sections::apploader::APPLOADER_OFFSET;
-use crate::sections::fst::{
-    FST,
-    entry::{DirectoryEntry, Entry, EntryInfo, FileEntry},
+use std::{
+    cmp,
+    fs::{read_dir, File},
+    io::{self, BufReader, Write},
+    iter,
+    path::{self, Path, PathBuf},
+    sync::OnceLock,
 };
-use crate::sections::header::Header;
+
 use crate::{
     align,
-    DEFAULT_ALIGNMENT,
     extract_section,
     paths::*,
+    sections::{
+        apploader::APPLOADER_OFFSET,
+        fst::{
+            entry::{DirectoryEntry, Entry, EntryInfo, FileEntry},
+            FST
+        },
+        header::Header,
+    },
+    DEFAULT_ALIGNMENT,
     WRITE_CHUNK_SIZE,
 };
 

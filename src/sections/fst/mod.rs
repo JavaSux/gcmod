@@ -1,24 +1,24 @@
-pub mod entry;
-
-use std::cmp::max;
-use std::collections::BTreeMap;
-use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
-use std::path::{Path, PathBuf};
+use std::{
+    cmp::max,
+    collections::BTreeMap,
+    io::{self, BufRead, Read, Seek, SeekFrom, Write},
+    path::{Path, PathBuf},
+};
 
 use byteorder::{BigEndian, ReadBytesExt};
 
-use crate::sections::Section;
 use crate::{
     extract_section,
     format_u64,
     format_usize,
     NumberStyle,
+    sections::Section,
 };
 
-use self::entry::{DirectoryEntry, Entry, EntryInfo, ENTRY_SIZE};
+pub mod entry;
+use entry::{DirectoryEntry, Entry, EntryInfo, ENTRY_SIZE};
 
-
-pub const FST_OFFSET_OFFSET: u64 = 0x0424; 
+pub const FST_OFFSET_OFFSET: u64 = 0x0424;
 pub const FST_SIZE_OFFSET: u64 = 0x0428;
 
 #[derive(Debug)]
@@ -118,7 +118,7 @@ impl FST {
     }
 
     pub fn extract_file_system(
-        &mut self, 
+        &mut self,
         path: impl AsRef<Path>,
         iso: impl BufRead + Seek,
         callback: impl FnMut(usize),

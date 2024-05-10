@@ -4,4 +4,4 @@ pub mod fst;
 pub mod header;
 
 mod section;
-pub use self::section::Section;
+pub use section::Section;

@@ -1,11 +1,18 @@
-use std::fs::{create_dir_all, File};
-use std::io::{self, BufRead, Seek, SeekFrom, Write};
-use std::path::{self, Path, PathBuf};
+use std::{
+    fs::{create_dir_all, File},
+    io::{self, BufRead, Seek, SeekFrom, Write},
+    path::{self, Path, PathBuf},
+};
 
 use byteorder::{BigEndian, ReadBytesExt};
 
-use crate::{extract_section, format_u64, format_usize, NumberStyle};
-use crate::sections::Section;
+use crate::{
+    extract_section,
+    format_u64,
+    format_usize,
+    sections::Section,
+    NumberStyle,
+};
 
 pub const ENTRY_SIZE: usize = 12;
 
@@ -315,4 +322,3 @@ impl Section for FileEntry {
         self.size
     }
 }
-

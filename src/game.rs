@@ -1,23 +1,26 @@
-use std::collections::BTreeMap;
-use std::fs::{create_dir, File};
-use std::io::{self, BufRead, Seek};
-use std::path::Path;
-
-use crate::sections::apploader::{Apploader, APPLOADER_OFFSET};
-use crate::sections::dol::DOLHeader;
-use crate::sections::dol::segment::Segment;
-use crate::sections::fst::{
-    entry::DirectoryEntry,
-    FST,
+use std::{
+    collections::BTreeMap,
+    fs::{create_dir, File},
+    io::{self, BufRead, Seek},
+    path::Path
 };
-use crate::sections::header::{GAME_HEADER_SIZE, Header};
+
 use crate::{
     format_u64,
-    NumberStyle,
     paths::*,
+    sections::{
+        apploader::{Apploader, APPLOADER_OFFSET},
+        dol::{segment::Segment, DOLHeader},
+        fst::{
+            entry::DirectoryEntry,
+            FST,
+        },
+        header::{Header, GAME_HEADER_SIZE},
+        Section,
+    },
+    NumberStyle,
 };
 
-use crate::sections::Section;
 
 pub const ROM_SIZE: usize = 0x57058000;
 

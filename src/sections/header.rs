@@ -10,9 +10,8 @@ use crate::{
     format_u64,
     format_usize,
     NumberStyle,
+    sections::Section,
 };
-
-use crate::sections::Section;
 
 pub const GAME_HEADER_SIZE: usize = 0x2440;
 

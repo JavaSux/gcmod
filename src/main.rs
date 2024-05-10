@@ -17,6 +17,7 @@ use gcmod::{
     NumberStyle,
     parse_as_u64,
     ROM_SIZE,
+    ROMRebuilder,
     sections::{
         apploader::Apploader,
         dol::DOLHeader,
@@ -25,7 +26,6 @@ use gcmod::{
         Section,
     },
 };
-use gcmod::ROMRebuilder;
 
 fn main() -> AppResult {
     let app = clap_app!(app =>

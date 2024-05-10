@@ -1,8 +1,8 @@
-pub mod segment;
-
-use std::cmp::max;
-use std::io::{self, Read, Seek, SeekFrom, Write};
-use std::iter::Iterator;
+use std::{
+    cmp::max,
+    io::{self, Read, Seek, SeekFrom, Write},
+    iter::Iterator,
+};
 
 use byteorder::{BigEndian, ReadBytesExt};
 
@@ -10,12 +10,12 @@ use crate::{
     extract_section,
     format_u64,
     format_usize,
+    sections::Section,
     NumberStyle,
 };
 
-use self::segment::{Segment, SegmentType};
-
-use crate::sections::Section;
+pub mod segment;
+use segment::{Segment, SegmentType};
 
 const TEXT_SEG_COUNT: usize = 7;
 const DATA_SEG_COUNT: usize = 11;

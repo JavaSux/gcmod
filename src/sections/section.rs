@@ -1,6 +1,5 @@
-use crate::NumberStyle;
-use std::cmp::Ordering::*;
 use std::cmp::Ordering;
+use crate::NumberStyle;
 
 pub trait Section {
     fn print_info(&self, style: NumberStyle);
@@ -15,11 +14,11 @@ pub trait Section {
 
     fn compare_offset(&self, offset: u64) -> Ordering {
         if self.end() < offset {
-            Less
+            Ordering::Less
         } else if self.start() > offset {
-            Greater
+            Ordering::Greater
         } else {
-            Equal
+            Ordering::Equal
         }
     }
 }

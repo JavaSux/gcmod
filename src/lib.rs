@@ -7,13 +7,11 @@ use std::{
 };
 
 mod game;
-pub use crate::game::Game;
-pub use crate::game::ROM_SIZE;
-
+mod rom_rebuilder;
 pub mod sections;
 
-mod rom_rebuilder;
-pub use crate::rom_rebuilder::ROMRebuilder;
+pub use game::{Game, ROM_SIZE};
+pub use rom_rebuilder::ROMRebuilder;
 
 // 1048576 = 2^20 = 1MiB, there's no real good reason behind this choice
 pub const WRITE_CHUNK_SIZE: usize = 1048576;
