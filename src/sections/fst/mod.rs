@@ -83,13 +83,13 @@ impl FST {
             entries.push(e);
         }
 
-        let str_tbl_addr = iso.seek(SeekFrom::Current(0))?;
+        let str_tbl_addr = iso.stream_position()?;
 
         let mut end = 0;
         for e in entries.iter_mut() {
             e.read_filename(&mut iso, str_tbl_addr)?;
 
-            let curr_end = iso.seek(SeekFrom::Current(0))?;
+            let curr_end = iso.stream_position()?;
             end = max(curr_end, end);
         }
 

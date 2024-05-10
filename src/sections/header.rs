@@ -181,7 +181,7 @@ impl Header {
         let user_length = file.read_u32::<BigEndian>()?;
         let unknown = file.read_u32::<BigEndian>()?;
 
-        let pos = file.seek(SeekFrom::Current(0))?;
+        let pos = file.stream_position()?;
 
         let information = HeaderInformation::new(file, pos)?;
 
