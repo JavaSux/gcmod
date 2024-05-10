@@ -1,7 +1,5 @@
 use std::io::{Write, Seek, SeekFrom, Read, self};
 
-use regex::Regex;
-
 use crate::{format_u64, format_usize, NumberStyle, parse_as_u64, extract_section};
 use crate::sections::Section;
 
@@ -60,21 +58,13 @@ impl Segment {
     }
 
     pub fn parse_segment_name(name: &str) -> Option<(SegmentType, u64)> {
-        use self::SegmentType::*;
-        lazy_static! {
-            static ref SEG_NAME_REGEX: Regex =
-                Regex::new(r"^\.?(text|data)(\d+)$").unwrap();
-        }
-        SEG_NAME_REGEX.captures(name).and_then(|c| {
-            parse_as_u64(c.get(2).unwrap().as_str()).map(|n| {
-                let t = match c.get(1).unwrap().as_str() {
-                    "text" => Text,
-                    "data" => Data,
-                    _ => unreachable!(),
-                };
-                (t, n)
-            }).ok()
-        })
+        let (kind, suffix) =
+            if let Some(suffix) = name.strip_prefix(".text") { (SegmentType::Text, suffix) }
+            else if let Some(suffix) = name.strip_prefix(".data") { (SegmentType::Data, suffix) }
+            else { return None; };
+
+        let n = parse_as_u64(suffix).ok()?;
+        Some((kind, n))
     }
 
     // TODO: put in a trait

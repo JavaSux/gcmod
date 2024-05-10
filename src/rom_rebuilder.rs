@@ -1,8 +1,8 @@
-use std::cmp;
+use std::{cmp, iter};
 use std::fs::{File, read_dir};
 use std::io::{self, BufReader, Write};
 use std::path::{self, Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::OnceLock;
 
 use crate::sections::apploader::APPLOADER_OFFSET;
 use crate::sections::fst::{
@@ -386,17 +386,17 @@ impl ROMRebuilder {
     }
 }
 
-fn write_zeros(count: usize, mut output: impl Write) -> io::Result<()> {
-    lazy_static! {
-        static ref ZEROS: Mutex<Vec<u8>> = Mutex::new(vec![]);
+fn write_zeros(mut remaining: usize, mut output: impl Write) -> io::Result<()> {
+    static ZEROS: OnceLock<Box<[u8]>> = OnceLock::new();
+    let zeros = ZEROS.get_or_init(||
+        iter::repeat(0).take(WRITE_CHUNK_SIZE).collect()
+    );
+
+    while remaining > 0 {
+        let count = cmp::min(WRITE_CHUNK_SIZE, remaining);
+        output.write_all(&zeros[..count])?;
+        remaining -= count;
     }
-    let mut zeros = ZEROS.lock().unwrap();
-    let block_size = cmp::min(count, WRITE_CHUNK_SIZE);
-    zeros.resize(block_size, 0);
-    for i in 0..(count / WRITE_CHUNK_SIZE + 1) {
-        (&mut output).write_all(
-            &zeros[..cmp::min(WRITE_CHUNK_SIZE, count - WRITE_CHUNK_SIZE * i)]
-        )?;
-    }
+
     Ok(())
 }
