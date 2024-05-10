@@ -5,14 +5,14 @@ use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
 
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
-use ::{
+use crate::{
     extract_section,
     format_u64,
     format_usize,
     NumberStyle,
 };
 
-use sections::Section;
+use crate::sections::Section;
 
 pub const GAME_HEADER_SIZE: usize = 0x2440;
 

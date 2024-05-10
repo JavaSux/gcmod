@@ -2,7 +2,7 @@ use std::io::{self, Read, Seek, SeekFrom, Write};
 
 use byteorder::{BigEndian, ReadBytesExt};
 
-use ::{
+use crate::{
     align,
     extract_section,
     format_u64,
@@ -10,7 +10,7 @@ use ::{
     NumberStyle,
 };
 
-use sections::Section;
+use crate::sections::Section;
 
 pub const APPLOADER_OFFSET: u64 = 0x2440;
 const APPLOADER_DATE_SIZE: usize = 0x0A;

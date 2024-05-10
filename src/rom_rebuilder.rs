@@ -4,13 +4,13 @@ use std::io::{self, BufReader, Write};
 use std::path::{self, Path, PathBuf};
 use std::sync::Mutex;
 
-use sections::apploader::APPLOADER_OFFSET;
-use sections::fst::{
+use crate::sections::apploader::APPLOADER_OFFSET;
+use crate::sections::fst::{
     FST,
     entry::{DirectoryEntry, Entry, EntryInfo, FileEntry},
 };
-use sections::header::Header;
-use ::{
+use crate::sections::header::Header;
+use crate::{
     align,
     DEFAULT_ALIGNMENT,
     extract_section,

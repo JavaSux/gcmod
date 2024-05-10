@@ -1,13 +1,10 @@
-#[macro_use]
-extern crate clap;
-extern crate gcmod;
-extern crate tempfile;
+use std::{
+    fs::{remove_file, File},
+    io::BufReader,
+    path::Path,
+};
 
-use std::fs::{remove_file, File};
-use std::io::BufReader;
-use std::path::Path;
-
-use clap::AppSettings;
+use clap::{clap_app, AppSettings};
 
 use gcmod::{
     AppError,
@@ -72,13 +69,13 @@ fn main() -> AppResult {
     ).setting(AppSettings::SubcommandRequired);
 
     match app.get_matches().subcommand() {
-        ("extract", Some(cmd)) => 
+        ("extract", Some(cmd)) =>
             extract_iso(
                 cmd.value_of("rom_path").unwrap(),
                 cmd.value_of("output").unwrap(),
                 cmd.value_of("rom_section"),
             ),
-        ("info", Some(cmd)) => 
+        ("info", Some(cmd)) =>
             get_info(
                 cmd.value_of("rom_path").unwrap(),
                 cmd.value_of("type"),

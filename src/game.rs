@@ -3,21 +3,21 @@ use std::fs::{create_dir, File};
 use std::io::{self, BufRead, Seek};
 use std::path::Path;
 
-use sections::apploader::{Apploader, APPLOADER_OFFSET};
-use sections::dol::DOLHeader;
-use sections::dol::segment::Segment;
-use sections::fst::{
+use crate::sections::apploader::{Apploader, APPLOADER_OFFSET};
+use crate::sections::dol::DOLHeader;
+use crate::sections::dol::segment::Segment;
+use crate::sections::fst::{
     entry::DirectoryEntry,
     FST,
 };
-use sections::header::{GAME_HEADER_SIZE, Header};
-use ::{
+use crate::sections::header::{GAME_HEADER_SIZE, Header};
+use crate::{
     format_u64,
     NumberStyle,
     paths::*,
 };
 
-use sections::Section;
+use crate::sections::Section;
 
 pub const ROM_SIZE: usize = 0x57058000;
 

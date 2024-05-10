@@ -6,7 +6,7 @@ use std::iter::Iterator;
 
 use byteorder::{BigEndian, ReadBytesExt};
 
-use ::{
+use crate::{
     extract_section,
     format_u64,
     format_usize,
@@ -15,7 +15,7 @@ use ::{
 
 use self::segment::{Segment, SegmentType};
 
-use sections::Section;
+use crate::sections::Section;
 
 const TEXT_SEG_COUNT: usize = 7;
 const DATA_SEG_COUNT: usize = 11;

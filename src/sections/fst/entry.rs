@@ -4,8 +4,8 @@ use std::path::{self, Path, PathBuf};
 
 use byteorder::{BigEndian, ReadBytesExt};
 
-use ::{extract_section, format_u64, format_usize, NumberStyle};
-use sections::Section;
+use crate::{extract_section, format_u64, format_usize, NumberStyle};
+use crate::sections::Section;
 
 pub const ENTRY_SIZE: usize = 12;
 

@@ -2,8 +2,8 @@ use std::io::{Write, Seek, SeekFrom, Read, self};
 
 use regex::Regex;
 
-use ::{format_u64, format_usize, NumberStyle, parse_as_u64, extract_section};
-use sections::Section;
+use crate::{format_u64, format_usize, NumberStyle, parse_as_u64, extract_section};
+use crate::sections::Section;
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SegmentType {

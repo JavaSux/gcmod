@@ -1,28 +1,25 @@
-extern crate byteorder;
-#[macro_use]
-extern crate lazy_static;
-extern crate regex;
-
-use std::borrow::Cow;
-use std::cmp::min;
-use std::fmt;
-use std::io::{self, Read, Write};
-use std::num::ParseIntError;
+use std::{
+    borrow::Cow,
+    cmp::min,
+    fmt,
+    io::{self, Read, Write},
+    num::ParseIntError,
+};
 
 mod game;
-pub use game::Game;
-pub use game::ROM_SIZE;
+pub use crate::game::Game;
+pub use crate::game::ROM_SIZE;
 
 pub mod sections;
 
 mod rom_rebuilder;
-pub use rom_rebuilder::ROMRebuilder;
+pub use crate::rom_rebuilder::ROMRebuilder;
 
 // 1048576 = 2^20 = 1MiB, there's no real good reason behind this choice
-pub const WRITE_CHUNK_SIZE: usize = 1048576; 
+pub const WRITE_CHUNK_SIZE: usize = 1048576;
 
 // 32KiB
-pub const DEFAULT_ALIGNMENT: u64 = 32 * 1024; 
+pub const DEFAULT_ALIGNMENT: u64 = 32 * 1024;
 pub const MIN_ALIGNMENT: u64 = 4;
 
 pub mod paths {

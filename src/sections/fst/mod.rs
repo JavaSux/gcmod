@@ -7,8 +7,8 @@ use std::path::{Path, PathBuf};
 
 use byteorder::{BigEndian, ReadBytesExt};
 
-use sections::Section;
-use ::{
+use crate::sections::Section;
+use crate::{
     extract_section,
     format_u64,
     format_usize,
