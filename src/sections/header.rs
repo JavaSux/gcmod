@@ -95,7 +95,7 @@ impl HeaderInformation {
     where
         R: Read + Seek,
     {
-        file.seek(SeekFrom::Start(offset as u64))?;
+        file.seek(SeekFrom::Start(offset))?;
         Ok(HeaderInformation {
             debug_monitor_size: file.read_u32::<BigEndian>()?,
             simulated_memory_size: file.read_u32::<BigEndian>()?,
@@ -126,7 +126,7 @@ impl Header {
     where
         R: BufRead + Seek,
     {
-        file.seek(SeekFrom::Start(offset as u64))?;
+        file.seek(SeekFrom::Start(offset))?;
         let mut game_code = String::with_capacity(GAME_CODE_SIZE);
         file.by_ref().take(GAME_CODE_SIZE as u64)
             .read_to_string(&mut game_code)?;

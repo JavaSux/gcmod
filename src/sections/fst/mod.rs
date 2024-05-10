@@ -146,8 +146,8 @@ impl FST {
         }
         let null_byte = [0];
         for (_, name) in &sorted_names {
-            (&mut writer).write(name.as_bytes())?;
-            (&mut writer).write(&null_byte[..])?;
+            writer.write(name.as_bytes())?;
+            writer.write(&null_byte[..])?;
         }
         Ok(())
     }

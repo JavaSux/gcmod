@@ -134,7 +134,7 @@ impl<'a> FSTRebuilder<'a> {
             size,
         };
         let fst_path = self.config.root_path.join(FST_PATH);
-        fst.write(File::create(&fst_path)?)?;
+        fst.write(File::create(fst_path)?)?;
 
         self.config.space_used = Some(max_eof);
 
@@ -183,11 +183,11 @@ impl<'a> FSTRebuilder<'a> {
             let filename = e.file_name();
             let filename = filename.to_string_lossy();
 
-            if FSTRebuilder::is_file_ignored(&*filename) {
+            if FSTRebuilder::is_file_ignored(&filename) {
                 continue
             }
 
-            let index = rb_info.entries.len() as usize;
+            let index = rb_info.entries.len();
             let info = EntryInfo {
                 index,
                 name: filename.clone().into_owned(),
@@ -239,8 +239,8 @@ impl<'a> HeaderRebuilder<'a> {
         let header_buf = BufReader::new(File::open(&header_path)?);
         let mut header = Header::new(header_buf, 0)?;
 
-        header.dol_offset = self.dol_offset as u64;
-        header.fst_offset = self.fst.offset as u64;
+        header.dol_offset = self.dol_offset;
+        header.fst_offset = self.fst.offset;
         header.fst_size = self.fst.size;
 
         // TODO: Is this okay to assume?
@@ -356,7 +356,7 @@ impl ROMRebuilder {
         let total_files = self.files.len();
 
         for (i, &(offset, ref filename)) in self.files.iter().enumerate() {
-            let mut file = File::open(filename)?;
+            let file = File::open(filename)?;
             let size = file.metadata()?.len();
 
             if size == 0 { continue }
@@ -364,7 +364,7 @@ impl ROMRebuilder {
             write_zeros((offset - bytes_written) as usize, &mut output)?;
             bytes_written = offset;
 
-            extract_section(&mut file, size as usize, &mut output)?;
+            extract_section(&file, size as usize, &mut output)?;
             bytes_written += size;
 
             if bytes_written as usize > ROM_SIZE {
