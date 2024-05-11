@@ -145,7 +145,7 @@ impl FST {
             sorted_names.insert(e.info().filename_offset, &e.info().name);
         }
         let null_byte = [0];
-        for (_, name) in &sorted_names {
+        for name in sorted_names.values() {
             writer.write_all(name.as_bytes())?;
             writer.write_all(&null_byte[..])?;
         }
