@@ -1,10 +1,4 @@
-use std::{
-    borrow::Cow,
-    cmp::min,
-    fmt,
-    io::{self, Read, Write},
-    num::ParseIntError,
-};
+use std::{borrow::Cow, fmt, io, num::ParseIntError};
 
 mod game;
 mod rom_rebuilder;
@@ -25,27 +19,6 @@ pub mod paths {
     pub const DOL_PATH: &str = "&&systemdata/Start.dol";
     pub const FST_PATH: &str = "&&systemdata/Game.toc";
     pub const HEADER_PATH: &str = "&&systemdata/ISO.hdr";
-}
-
-pub fn extract_section(
-    mut iso: impl Read,
-    bytes: usize,
-    mut file: impl Write,
-) -> io::Result<()> {
-    let mut buf: [u8; WRITE_CHUNK_SIZE] = [0; WRITE_CHUNK_SIZE];
-    let mut bytes_left = bytes;
-
-    while bytes_left > 0 {
-        let bytes_to_read = min(bytes_left, WRITE_CHUNK_SIZE) as u64;
-
-        let bytes_read = (&mut iso).take(bytes_to_read).read(&mut buf)?;
-        if bytes_read == 0 { break }
-        file.write_all(&buf[..bytes_read])?;
-
-        bytes_left -= bytes_read;
-    }
-
-    Ok(())
 }
 
 pub fn align(n: u64, m: u64) -> u64 {

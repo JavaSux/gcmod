@@ -5,13 +5,7 @@ use std::{
 
 use byteorder::{BigEndian, ReadBytesExt};
 
-use crate::{
-    extract_section,
-    format_u64,
-    format_usize,
-    sections::Section,
-    NumberStyle,
-};
+use crate::{format_u64, format_usize, sections::Section, NumberStyle};
 
 pub mod segment;
 use segment::{Segment, SegmentType};
@@ -120,7 +114,7 @@ impl DOLHeader {
         self.segments.iter()
     }
 
-    pub fn extract<R, W>(mut iso: R, file: W, dol_addr: u64) -> io::Result<()>
+    pub fn extract<R, W>(mut iso: R, mut file: W, dol_addr: u64) -> io::Result<()>
     where
         R: Read + Seek,
         W: Write,
@@ -149,8 +143,10 @@ impl DOLHeader {
         }
 
         iso.seek(SeekFrom::Start(dol_addr))?;
-
-        extract_section(iso, dol_size as usize, file)
+        io::copy(
+            &mut iso.take(dol_size as u64),
+            &mut file,
+        ).map(drop)
     }
 
     pub fn segment_at_addr(&self, mem_addr: u64) -> Option<&Segment> {

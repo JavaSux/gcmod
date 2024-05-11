@@ -8,7 +8,6 @@ use std::{
 use byteorder::{BigEndian, ReadBytesExt};
 
 use crate::{
-    extract_section,
     format_u64,
     format_usize,
     NumberStyle,
@@ -128,14 +127,17 @@ impl FST {
 
     pub fn extract(
         mut iso: impl Read + Seek,
-        file: impl Write,
+        mut file: impl Write,
         fst_offset: u64,
     ) -> io::Result<()> {
         iso.seek(SeekFrom::Start(FST_SIZE_OFFSET))?;
         let size = iso.read_u32::<BigEndian>()? as usize;
 
         iso.seek(SeekFrom::Start(fst_offset))?;
-        extract_section(iso, size, file)
+        io::copy(
+            &mut iso.take(size as u64),
+            &mut file,
+        ).map(drop)
     }
 
     pub fn write(&self, mut writer: impl Write) -> io::Result<()> {

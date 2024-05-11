@@ -4,7 +4,6 @@ use byteorder::{BigEndian, ReadBytesExt};
 
 use crate::{
     align,
-    extract_section,
     format_u64,
     format_usize,
     NumberStyle,
@@ -13,8 +12,8 @@ use crate::{
 
 pub const APPLOADER_OFFSET: u64 = 0x2440;
 const APPLOADER_DATE_SIZE: usize = 0x0A;
-const APPLOADER_ENTRY_POINT_ADDR: u64 = 0x2450;
-const APPLOADER_ENTRY_POINT_SIZE: u64 = 0xA0;
+// const APPLOADER_ENTRY_POINT_ADDR: u64 = 0x2450;
+// const APPLOADER_ENTRY_POINT_SIZE: u64 = 0xA0;
 const APPLOADER_SIZE_ADDR: u64 = 0x2454;
 
 #[derive(Debug)]
@@ -34,7 +33,6 @@ impl Apploader {
         reader.seek(SeekFrom::Start(offset))?;
         let mut date = String::new();
         reader.take(APPLOADER_DATE_SIZE as u64).read_to_string(&mut date)?;
-
         reader.seek(SeekFrom::Current(6))?; // it's just fluff
 
         let entry_point = reader.read_u32::<BigEndian>()? as u64;
@@ -54,7 +52,7 @@ impl Apploader {
         align((self.code_size + self.trailer_size) as u64, 32) as usize
     }
 
-    pub fn extract<R, W>(mut iso: R, file: W) -> io::Result<()>
+    pub fn extract<R, W>(mut iso: R, mut file: W) -> io::Result<()>
     where
         R: Read + Seek,
         W: Write,
@@ -65,7 +63,10 @@ impl Apploader {
         iso.seek(SeekFrom::Start(APPLOADER_OFFSET))?;
 
         let aligned_size = align(code_size + trailer_size, 32);
-        extract_section(iso, aligned_size as usize, file)
+        io::copy(
+            &mut iso.take(aligned_size),
+            &mut file,
+        ).map(drop)
     }
 }
 

@@ -1,13 +1,6 @@
-use std::io::{Write, Seek, SeekFrom, Read, self};
+use std::io::{self, Read, Seek, SeekFrom, Write};
 
-use crate::{
-    extract_section,
-    format_u64,
-    format_usize,
-    parse_as_u64,
-    sections::Section,
-    NumberStyle,
-};
+use crate::{format_u64, format_usize, NumberStyle, parse_as_u64, sections::Section};
 
 #[derive(Copy, Clone, Debug, Eq, Hash, PartialEq)]
 pub enum SegmentType {
@@ -74,14 +67,17 @@ impl Segment {
     }
 
     // TODO: put in a trait
-    pub fn extract<R, W>(&self, mut iso: R, output: W) -> io::Result<()>
+    pub fn extract<R, W>(&self, mut iso: R, mut output: W) -> io::Result<()>
     where
         Self: Sized,
         R: Read + Seek,
         W: Write,
     {
         iso.seek(SeekFrom::Start(self.offset))?;
-        extract_section(iso, self.size, output)
+        io::copy(
+            &mut iso.take(self.size as u64),
+            &mut output,
+        ).map(drop)
     }
 }
 

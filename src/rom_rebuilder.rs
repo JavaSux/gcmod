@@ -1,7 +1,7 @@
 use std::{
     cmp,
     fs::{read_dir, File},
-    io::{self, BufReader, Write},
+    io::{self, BufReader, Read, Write},
     iter,
     path::{self, Path, PathBuf},
     sync::OnceLock,
@@ -9,7 +9,6 @@ use std::{
 
 use crate::{
     align,
-    extract_section,
     paths::*,
     sections::{
         apploader::APPLOADER_OFFSET,
@@ -364,7 +363,10 @@ impl ROMRebuilder {
             write_zeros((offset - bytes_written) as usize, &mut output)?;
             bytes_written = offset;
 
-            extract_section(&file, size as usize, &mut output)?;
+            io::copy(
+                &mut file.take(size),
+                &mut output,
+            ).map(drop)?;
             bytes_written += size;
 
             if bytes_written as usize > ROM_SIZE {

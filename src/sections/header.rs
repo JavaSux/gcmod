@@ -6,11 +6,10 @@ use std::io::{self, BufRead, Read, Seek, SeekFrom, Write};
 use byteorder::{BigEndian, ReadBytesExt, WriteBytesExt};
 
 use crate::{
-    extract_section,
     format_u64,
     format_usize,
-    NumberStyle,
     sections::Section,
+    NumberStyle,
 };
 
 pub const GAME_HEADER_SIZE: usize = 0x2440;
@@ -182,7 +181,6 @@ impl Header {
         let unknown = file.read_u32::<BigEndian>()?;
 
         let pos = file.stream_position()?;
-
         let information = HeaderInformation::new(file, pos)?;
 
         Ok(Header {
@@ -206,13 +204,16 @@ impl Header {
         })
     }
 
-    pub fn extract<R, W>(mut iso: R, output: W) -> io::Result<()>
+    pub fn extract<R, W>(mut iso: R, mut output: W) -> io::Result<()>
     where
         R: Read + Seek,
         W: Write,
     {
         iso.seek(SeekFrom::Start(0))?;
-        extract_section(iso, GAME_HEADER_SIZE, output)
+        io::copy(
+            &mut iso.take(GAME_HEADER_SIZE as u64),
+            &mut output,
+        ).map(drop)
     }
 
     pub fn write(&self, mut writer: impl Write) -> io::Result<()> {

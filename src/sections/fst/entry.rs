@@ -7,7 +7,6 @@ use std::{
 use byteorder::{BigEndian, ReadBytesExt};
 
 use crate::{
-    extract_section,
     format_u64,
     format_usize,
     sections::Section,
@@ -255,13 +254,16 @@ impl Entry {
 
 impl FileEntry {
     // TODO: rename this
-    pub fn extract<R, W>(&self, mut reader: R, file: W) -> io::Result<()>
+    pub fn extract<R, W>(&self, mut reader: R, mut file: W) -> io::Result<()>
     where
         R: BufRead + Seek,
         W: Write,
     {
         reader.seek(SeekFrom::Start(self.file_offset))?;
-        extract_section(reader, self.size, file)
+        io::copy(
+            &mut reader.take(self.size as u64),
+            &mut file,
+        ).map(drop)
     }
 }
 
