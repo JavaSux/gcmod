@@ -18,9 +18,7 @@ pub const ENTRY_SIZE: usize = 12;
 
 // writes in big endian
 fn write_int_to_buffer(num: u64, buf: &mut [u8]) {
-    for i in 0..buf.len() {
-        buf[i] = ((num >> 8 * (buf.len() - i - 1)) & 0xff) as u8;
-    }
+    buf.copy_from_slice(&num.to_be_bytes())
 }
 
 #[derive(Debug)]
