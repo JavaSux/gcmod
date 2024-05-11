@@ -5,6 +5,8 @@ use std::{
     path::Path
 };
 
+use eyre::WrapErr;
+
 use crate::{
     format_u64,
     paths::*,
@@ -73,7 +75,7 @@ impl Game {
         ROMLayout(layout)
     }
 
-    pub fn extract<R, P>(&mut self, mut iso: R, path: P) -> io::Result<()>
+    pub fn extract<R, P>(&mut self, mut iso: R, path: P) -> eyre::Result<()>
     where
         R: BufRead + Seek,
         P: AsRef<Path>,
@@ -87,20 +89,19 @@ impl Game {
         println!("Extracting system data...");
 
         let header_file = File::create(sys_data_path.join("ISO.hdr"))?;
-        Header::extract(&mut iso, header_file)?;
+        Header::extract(&mut iso, header_file).wrap_err("Failed to extract header")?;
 
         let fst_file = File::create(sys_data_path.join("Game.toc"))?;
-        FST::extract(&mut iso, fst_file, self.fst.offset)?;
+        FST::extract(&mut iso, fst_file, self.fst.offset).wrap_err("Failed to extract FST")?;
 
         let apploader_file = File::create(sys_data_path.join("Apploader.ldr"))?;
-        Apploader::extract(&mut iso, apploader_file)?;
+        Apploader::extract(&mut iso, apploader_file).wrap_err("Failed to extract AppLoader")?;
 
         let mut dol_file = File::create(sys_data_path.join("Start.dol"))?;
-        DOLHeader::extract(&mut iso, &mut dol_file, self.dol.offset)?;
+        DOLHeader::extract(&mut iso, &mut dol_file, self.dol.offset).wrap_err("Failed to extract DOL")?;
 
         println!("Extracting file system...");
-
-        self.extract_file_system(&mut iso, path.as_ref(), 4)?;
+        self.extract_file_system(&mut iso, path.as_ref(), 4).wrap_err("Failed to extract filesystem")?;
         Ok(())
     }
 
@@ -109,15 +110,15 @@ impl Game {
         iso: impl BufRead + Seek,
         path: impl AsRef<Path>,
         existing_files: usize,
-    ) -> io::Result<usize> {
+    ) -> eyre::Result<usize> {
         let total = self.fst.file_count + existing_files;
         let mut count = existing_files;
         let res = self.fst.extract_file_system(path, iso, |_| {
             count += 1;
             print!("\r{}/{} files written.", count, total)
-        });
+        })?;
         println!();
-        res
+        Ok(res)
     }
 
     pub fn extract_section_with_name(
@@ -125,24 +126,25 @@ impl Game {
         filename: impl AsRef<Path>,
         output: impl AsRef<Path>,
         iso: impl BufRead + Seek,
-    ) -> io::Result<bool> {
+    ) -> eyre::Result<bool> {
         let output = output.as_ref();
         let filename = &*filename.as_ref().to_string_lossy();
         match filename {
             HEADER_PATH =>
-                Header::extract(iso, &mut File::create(output)?).map(|_| true),
+                Header::extract(iso, &mut File::create(output)?)
+                    .map(|_| true).wrap_err("Failed to extract header"),
             APPLOADER_PATH =>
                 Apploader::extract(iso, &mut File::create(output)?)
-                    .map(|_| true),
+                    .map(|_| true).wrap_err("Failed to extract AppLoader"),
             DOL_PATH =>
                 DOLHeader::extract(
                     iso,
                     &mut File::create(output)?,
                     self.dol.offset,
-                ).map(|_| true),
+                ).map(|_| true).wrap_err("Failed to extract DOL"),
             FST_PATH =>
                 FST::extract(iso, &mut File::create(output)?, self.fst.offset)
-                    .map(|_| true),
+                    .map(|_| true).wrap_err("Failed to extract FST"),
             _ => {
                 if let Some(e) = self.fst.entry_for_path(filename) {
                     e.extract_with_name(
@@ -154,7 +156,8 @@ impl Game {
                     Segment::parse_segment_name(filename)
                 {
                     if let Some(s) = self.dol.find_segment(t, n) {
-                        s.extract(iso, &mut File::create(output)?).map(|_| true)
+                        s.extract(iso, &mut File::create(output)?)
+                            .map(|_| true).wrap_err("Failed to extract DOL")
                     } else {
                         Ok(false)
                     }

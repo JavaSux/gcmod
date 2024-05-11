@@ -6,9 +6,8 @@ use std::{
 
 use clap::{clap_app, AppSettings};
 
+use eyre::{eyre, bail, ensure, OptionExt, WrapErr};
 use gcmod::{
-    AppError,
-    AppResult,
     DEFAULT_ALIGNMENT,
     Game,
     format_u64,
@@ -27,7 +26,7 @@ use gcmod::{
     },
 };
 
-fn main() -> AppResult {
+fn main() -> eyre::Result<()> {
     let app = clap_app!(app =>
         (@subcommand extract =>
             (about: "Extract a ROM's contents to disk.")
@@ -108,22 +107,20 @@ fn extract_iso(
     input: impl AsRef<Path>,
     output: impl AsRef<Path>,
     file_in_iso: Option<impl AsRef<Path>>,
-) -> AppResult {
+) -> eyre::Result<()> {
     let output = output.as_ref();
 
     if let Some(file) = file_in_iso {
         return extract_section(input.as_ref(), file.as_ref(), output);
     }
 
-    if output.exists() {
-        return Err(AppError::new(format!("Error: {} already exists.", output.display())));
-    }
+    ensure!(!output.exists(), "Output path {} already exists.", output.display());
 
     let (mut game, mut iso) = try_to_open_game(input.as_ref(), 0)?;
-    game.extract(&mut iso, output).map_err(|_| AppError::new("Failed to write files."))
+    game.extract(&mut iso, output).wrap_err("Failed to extract game")
 }
 
-fn print_iso_info(input: impl AsRef<Path>, offset: u64, style: NumberStyle) -> AppResult {
+fn print_iso_info(input: impl AsRef<Path>, offset: u64, style: NumberStyle) -> eyre::Result<()> {
     let (game, _) = try_to_open_game(input, offset)?;
     game.print_info(style);
     Ok(())
@@ -134,11 +131,12 @@ fn rebuild_iso(
     iso_path: impl AsRef<Path>,
     alignment: Option<&str>,
     rebuild_systemdata: bool,
-) -> AppResult {
+) -> eyre::Result<()> {
     let alignment = match alignment {
         Some(a) => match parse_as_u64(a) {
             Ok(a) if a >= MIN_ALIGNMENT => a,
-            _ => return Err(AppError::new(format!("Invalid alignment. Must be an integer >= {}", MIN_ALIGNMENT))),
+            Ok(_) => bail!("Invalid alignment. Must be >= {MIN_ALIGNMENT}"),
+            Err(e) => Err(e).wrap_err("Invalid alignment")?,
         },
         None => DEFAULT_ALIGNMENT,
     };
@@ -146,17 +144,13 @@ fn rebuild_iso(
     let iso_path = iso_path.as_ref();
     let root_path = root_path.as_ref();
 
-    if iso_path.exists() {
-        return Err(AppError::new(format!("{} already exists.", iso_path.display())));
-    }
-    if !root_path.exists() {
-        return Err(AppError::new("Couldn't find root."));
-    }
+    ensure!(!iso_path.exists(), "{} already exists.", iso_path.display());
+    ensure!(root_path.exists(), "Couldn't find root.");
 
-    let iso = File::create(iso_path)?;
-    if let Err(_) = ROMRebuilder::rebuild(root_path, alignment, iso, rebuild_systemdata) {
+    let iso = File::create(iso_path).wrap_err("Failed to create ISO")?;
+    if let Err(e) = ROMRebuilder::rebuild(root_path, alignment, iso, rebuild_systemdata) {
         remove_file(iso_path).unwrap();
-        Err(AppError::new("Couldn't rebuild iso."))
+        Err(e).wrap_err("Failed to rebuild ISO")
     } else {
         Ok(())
     }
@@ -168,7 +162,7 @@ fn get_info(
     offset: Option<&str>,
     mem_addr: Option<&str>,
     style: NumberStyle,
-) -> AppResult {
+) -> eyre::Result<()> {
     if let Some(offset) = offset {
         find_offset(path.as_ref(), offset, style)
     } else if let Some(addr) = mem_addr {
@@ -176,35 +170,35 @@ fn get_info(
     } else {
         let mut f = File::open(path.as_ref())
             .map(BufReader::new)
-            .map_err(|_| AppError::new("Couldn't open file"))?;
+            .wrap_err("Couldn't open file")?;
         let game = Game::open(&mut f, 0);
         match section_type {
             Some("header") => {
                 game
                     .map(|g| g.header)
                     .or_else(|_| Header::new(f, 0))
-                    .map_err(|_| AppError::new("Invalid iso or header"))?
+                    .wrap_err("Invalid iso or header")?
                     .print_info(style);
             },
             Some("dol") => {
                 game
                     .map(|g| g.dol)
                     .or_else(|_| DOLHeader::new(f, 0))
-                    .map_err(|_| AppError::new("Invalid iso or DOL"))?
+                    .wrap_err("Invalid iso or DOL")?
                     .print_info(style);
             },
             Some("fst") => {
                 game
                     .map(|g| g.fst)
                     .or_else(|_| FST::new(f, 0))
-                    .map_err(|_| AppError::new("Invalid iso or file system table"))?
+                    .wrap_err("Invalid iso or file system table")?
                     .print_info(style);
             },
             Some("apploader") | Some("app_loader") | Some("app-loader") => {
                 game
                     .map(|g| g.apploader)
                     .or_else(|_| Apploader::new(f, 0))
-                    .map_err(|_| AppError::new("Invalid iso or apploader"))?
+                    .wrap_err("Invalid iso or apploader")?
                     .print_info(style);
             },
             Some("layout") => { print_layout(path.as_ref())?; }
@@ -215,40 +209,40 @@ fn get_info(
     }
 }
 
-fn print_layout(path: impl AsRef<Path>) -> AppResult {
+fn print_layout(path: impl AsRef<Path>) -> eyre::Result<()> {
     let (game, _) = try_to_open_game(path.as_ref(), 0)?;
     game.print_layout();
     Ok(())
 }
 
-fn find_offset(header_path: impl AsRef<Path>, offset: &str, style: NumberStyle) -> AppResult {
+fn find_offset(header_path: impl AsRef<Path>, offset: &str, style: NumberStyle) -> eyre::Result<()> {
     let offset = parse_as_u64(offset).ok()
         .filter(|o| (*o as usize) < ROM_SIZE)
-        .ok_or_else(|| AppError::new(format!(
+        .ok_or_else(|| eyre!(
             "Invalid offset. Offset must be a number > 0 and < {}",
             format_usize(ROM_SIZE, style),
-        )))?;
+        ))?;
 
-    let (game, _) = try_to_open_game(header_path.as_ref(), 0)?;
+    let (game, _) = try_to_open_game(header_path.as_ref(), 0).wrap_err("Failed to open game")?;
     let layout = game.rom_layout();
     let section = layout.find_offset(offset)
-        .ok_or_else(|| AppError::new("There isn't any data at this offset."))?;
+        .ok_or_eyre("There isn't any data at this offset.")?;
 
     section.print_info(style);
     Ok(())
 }
 
-fn find_mem_addr(path: impl AsRef<Path>, mem_addr: &str, style: NumberStyle) -> AppResult {
+fn find_mem_addr(path: impl AsRef<Path>, mem_addr: &str, style: NumberStyle) -> eyre::Result<()> {
     let mem_addr = parse_as_u64(mem_addr)
-        .map_err(|_| AppError::new("Invalid address. Must be an integer."))?;
+        .wrap_err("Invalid address")?;
 
-    let (game, _) = try_to_open_game(path.as_ref(), 0)?;
+    let (game, _) = try_to_open_game(path.as_ref(), 0).wrap_err("Failed to open game")?;
 
     let seg = game.dol.segment_at_addr(mem_addr)
-        .ok_or_else(|| AppError::new("No DOL segment will be loaded at this address."))?;
+        .ok_or_eyre("No DOL segment will be loaded at this address")?;
 
     let offset = mem_addr - seg.loading_address;
-    println!("Segment: {}", seg.to_string());
+    println!("Segment: {seg}");
     println!("Offset from start of segment: {}", format_u64(offset, style));
 
     Ok(())
@@ -258,8 +252,8 @@ fn extract_section(
     iso_path: impl AsRef<Path>,
     section_filename: impl AsRef<Path>,
     output: impl AsRef<Path>,
-) -> AppResult {
-    let (game, mut iso) = try_to_open_game(iso_path.as_ref(), 0)?;
+) -> eyre::Result<()> {
+    let (game, mut iso) = try_to_open_game(iso_path.as_ref(), 0).wrap_err("Failed to open game")?;
 
     let result = game.extract_section_with_name(
         section_filename,
@@ -269,38 +263,36 @@ fn extract_section(
 
     match result {
         Ok(true) => Ok(()),
-        Ok(false) => Err(AppError::new("Couldn't find a section with that name.")),
-        Err(_) => Err(AppError::new("Error extracting section.")),
+        Ok(false) => Err(eyre!("Couldn't find a section with that name.")),
+        Err(_) => Err(eyre!("Error extracting section.")),
     }
 }
 
-fn ls_files(rom_path: impl AsRef<Path>, dir: Option<impl AsRef<Path>>, long_format: bool) -> AppResult {
+fn ls_files(rom_path: impl AsRef<Path>, path: Option<impl AsRef<Path>>, long_format: bool) -> eyre::Result<()> {
+    let path = path.as_ref().map(|path| path.as_ref());
+
     let (game, _) = try_to_open_game(rom_path, 0)?;
-    let dir = match dir {
+    let dir = match path {
         Some(p) => game.fst.entry_for_path(p).and_then(|e| e.as_dir()),
         None => Some(game.fst.root()),
     };
 
-    if let Some(d) = dir {
-        game.print_directory(d, long_format);
-        Ok(())
-    } else {
-        Err(AppError::new("No directory with that name/path exists"))
-    }
+    let Some(dir) = dir else { bail!("Directory {} does not exist", path.unwrap_or(Path::new("/")).display()); };
+
+    game.print_directory(dir, long_format);
+    Ok(())
 }
 
-fn try_to_open_game<P>(path: P, offset: u64) -> Result<(Game, BufReader<File>), AppError>
+fn try_to_open_game<P>(path: P, offset: u64) -> eyre::Result<(Game, BufReader<File>)>
 where
     P: AsRef<Path>,
 {
     let path = path.as_ref();
-    if !path.exists() {
-        return Err(AppError::new(format!("The iso {} doesn't exist.", path.display())));
-    }
+    ensure!(path.exists(), "The file {} doesn't exist.", path.display());
 
-    let iso = File::open(path).expect("Couldn't open file");
+    let iso = File::open(path).wrap_err("Couldn't open ISO file")?;
     let mut iso = BufReader::new(iso);
     Game::open(&mut iso, offset)
         .map(|game| (game, iso))
-        .map_err(|_| AppError::new(format!("Invalid iso: {}.", path.display())))
+        .wrap_err("Invalid ISO")
 }

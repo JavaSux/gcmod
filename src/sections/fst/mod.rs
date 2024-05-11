@@ -121,7 +121,7 @@ impl FST {
         path: impl AsRef<Path>,
         iso: impl BufRead + Seek,
         callback: impl FnMut(usize),
-    ) -> io::Result<usize> {
+    ) -> eyre::Result<usize> {
         self.entries[0].extract_with_name(path, &self.entries, iso, callback)
     }
 

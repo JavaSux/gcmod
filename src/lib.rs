@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt, io, num::ParseIntError};
+use std::num::ParseIntError;
 
 mod game;
 mod rom_rebuilder;
@@ -66,25 +66,3 @@ pub fn parse_as_usize(text: &str) -> Result<usize, ParseIntError> {
         usize::from_str_radix(text, 10)
     }
 }
-
-pub struct AppError(Cow<'static, str>);
-
-impl AppError {
-    pub fn new(msg: impl Into<Cow<'static, str>>) -> AppError {
-        AppError(msg.into())
-    }
-}
-
-impl fmt::Debug for AppError {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{}", self.0)
-    }
-}
-
-impl From<io::Error> for AppError {
-    fn from(e: io::Error) -> AppError {
-        AppError::new(e.to_string())
-    }
-}
-
-pub type AppResult = Result<(), AppError>;

@@ -5,6 +5,7 @@ use std::{
 };
 
 use byteorder::{BigEndian, ReadBytesExt};
+use eyre::WrapErr;
 
 use crate::{
     format_u64,
@@ -145,7 +146,7 @@ impl Entry {
         fst: &[Entry],
         mut iso: impl BufRead + Seek,
         mut callback: impl FnMut(usize),
-    ) -> io::Result<usize> {
+    ) -> eyre::Result<usize> {
         self.extract_with_name_and_count(filename, fst, &mut iso, 0, &mut callback)
     }
 
@@ -156,11 +157,13 @@ impl Entry {
         iso: &mut (impl BufRead + Seek),
         start_count: usize,
         callback: &mut impl FnMut(usize),
-    ) -> io::Result<usize> {
+    ) -> eyre::Result<usize> {
         let mut count = start_count;
+
         match self {
             Entry::Directory(ref d) => {
-                create_dir_all(filename.as_ref())?;
+                create_dir_all(filename.as_ref())
+                    .wrap_err_with(|| format!("Failed to create output directory {:?})", filename.as_ref()))?;
                 for e in d.iter_contents(fst) {
                     count += e.extract_with_name_and_count(
                         filename.as_ref().join(&e.info().name),
@@ -172,12 +175,15 @@ impl Entry {
                 }
             },
             Entry::File(ref f) => {
-                let mut out = File::create(filename)?;
-                f.extract(iso, &mut out)?;
+                let mut out = File::create(filename.as_ref())
+                    .wrap_err_with(|| format!("Failed to create output file {:?}", filename.as_ref()))?;
+                f.extract(iso, &mut out)
+                    .wrap_err_with(|| format!("Failed to copy file {:?}", f.info.full_path))?;
                 count += 1;
                 callback(count);
             },
         }
+
         Ok(count - start_count)
     }
 
