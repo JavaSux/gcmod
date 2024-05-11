@@ -52,8 +52,7 @@ pub fn format_usize(num: usize, style: NumberStyle) -> String {
 }
 
 pub fn parse_as_u64(text: &str) -> Result<u64, ParseIntError> {
-    let is_hex = text.chars().count() > 2 && (&text[0..2] == "0x" || &text[0..2] == "0X");
-    if is_hex {
+    if text.starts_with("0x") || text.starts_with("0X") {
         u64::from_str_radix(&text[2..], 16)
     } else {
         u64::from_str_radix(text, 10)
@@ -61,8 +60,7 @@ pub fn parse_as_u64(text: &str) -> Result<u64, ParseIntError> {
 }
 
 pub fn parse_as_usize(text: &str) -> Result<usize, ParseIntError> {
-    let is_hex = text.chars().count() > 2 && (&text[0..2] == "0x" || &text[0..2] == "0X");
-    if is_hex {
+    if text.starts_with("0x") || text.starts_with("0X") {
         usize::from_str_radix(&text[2..], 16)
     } else {
         usize::from_str_radix(text, 10)

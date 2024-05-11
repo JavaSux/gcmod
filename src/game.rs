@@ -199,7 +199,7 @@ impl Game {
             if long_format {
                 println!("{}", e.format_long());
             } else {
-                println!("{}", e.info().full_path.to_string_lossy());
+                println!("{}", e.info().full_path.display());
             }
         }
     }

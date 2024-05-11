@@ -1,4 +1,4 @@
-use std::io::{self, Read, Seek, SeekFrom, Write};
+use std::{fmt, io::{self, Read, Seek, SeekFrom, Write}};
 
 use crate::{format_u64, format_usize, NumberStyle, parse_as_u64, sections::Section};
 
@@ -8,11 +8,10 @@ pub enum SegmentType {
 }
 
 impl SegmentType {
-    pub fn to_string(self, seg_num: u64) -> String {
-        use self::SegmentType::*;
+    pub fn fmt(&self, f: &mut fmt::Formatter, seg_num: u64) -> fmt::Result {
         match self {
-            Text => format!(".text{}", seg_num),
-            Data => format!(".data{}", seg_num),
+            Self::Text => write!(f, ".text{seg_num}"),
+            Self::Data => write!(f, ".data{seg_num}"),
         }
     }
 }
@@ -52,10 +51,6 @@ impl Segment {
         }
     }
 
-    pub fn to_string(self) -> String {
-        self.seg_type.to_string(self.seg_num)
-    }
-
     pub fn parse_segment_name(name: &str) -> Option<(SegmentType, u64)> {
         let (kind, suffix) =
             if let Some(suffix) = name.strip_prefix(".text") { (SegmentType::Text, suffix) }
@@ -81,10 +76,15 @@ impl Segment {
     }
 }
 
+impl fmt::Display for Segment {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.seg_type.fmt(f, self.seg_num)
+    }
+}
 
 impl Section for Segment {
     fn print_info(&self, style: NumberStyle) {
-        println!("Segment name: {}", self.seg_type.to_string(self.seg_num));
+        println!("Segment name: {self}");
         println!("Offset: {}", format_u64(self.offset, style));
         println!("Size: {}", format_usize(self.size, style));
         println!("Loading address: {}", format_u64(self.loading_address, style));
