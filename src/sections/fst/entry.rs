@@ -194,7 +194,8 @@ impl Entry {
             reader.seek(SeekFrom::Start(str_tbl_addr + info.filename_offset))?;
             let mut bytes = Vec::new();
             reader.read_until(0, &mut bytes)?;
-            info.name = String::from_utf8(bytes).unwrap_or_else(|_| String::new());
+            bytes.pop(); // Discard null terminator
+            info.name = String::from_utf8_lossy(&bytes).into_owned();
             if is_directory {
                 info.name.push(path::MAIN_SEPARATOR);
             }
