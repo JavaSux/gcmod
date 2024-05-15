@@ -183,9 +183,8 @@ impl<'a> FSTRebuilder<'a> {
                 continue
             }
 
-            let index = rb_info.entries.len();
             let info = EntryInfo {
-                index,
+                index: rb_info.entries.len(),
                 name: filename.clone().into_owned(),
                 filename_offset: rb_info.filename_offset,
                 directory_index: rb_info.parent_index,
@@ -219,7 +218,7 @@ impl<'a> FSTRebuilder<'a> {
     }
 
     fn is_file_ignored(name: &str) -> bool {
-        name.starts_with(".") || name == "&&systemdata"
+        name.starts_with('.') || name == "&&systemdata"
     }
 }
 

@@ -146,11 +146,12 @@ impl FST {
             entry.write(&mut writer)?;
             sorted_names.insert(entry.info().filename_offset, &entry.info().name);
         }
-        let null_byte = [0];
+
         for name in sorted_names.values() {
             writer.write_all(name.as_bytes())?;
-            writer.write_all(&null_byte[..])?;
+            writer.write_all(&[0])?;
         }
+
         Ok(())
     }
 
@@ -173,7 +174,7 @@ impl FST {
     fn entry_with_name<'a>(&'a self, name: impl AsRef<Path>, dir: &'a DirectoryEntry) -> Option<&'a Entry> {
         let name = name.as_ref();
         dir.iter_contents(&self.entries).find_map(|entry| {
-            if name.as_os_str() == &entry.info().name[..] {
+            if name.as_os_str() == entry.info().name.as_str() {
                 Some(entry)
             } else {
                 entry.as_dir().and_then(|subdir| self.entry_with_name(name, subdir))

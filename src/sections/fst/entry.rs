@@ -157,27 +157,26 @@ impl Entry {
         start_count: usize,
         callback: &mut impl FnMut(usize),
     ) -> eyre::Result<usize> {
+        let filename = filename.as_ref();
         let mut count = start_count;
 
         match self {
             Self::Directory(ref dir) => {
-                create_dir_all(filename.as_ref())
-                    .wrap_err_with(|| format!("Failed to create output directory {:?})", filename.as_ref()))?;
+                create_dir_all(filename)
+                    .wrap_err_with(|| format!("Failed to create output directory {:?})", filename))?;
+
                 for entry in dir.iter_contents(fst) {
-                    count += entry.extract_with_name_and_count(
-                        filename.as_ref().join(&entry.info().name),
-                        fst,
-                        iso,
-                        count,
-                        callback,
-                    )?;
+                    let filename = filename.join(&entry.info().name);
+                    count += entry.extract_with_name_and_count(&filename, fst, iso, count, callback)?;
                 }
             },
             Self::File(ref file) => {
-                let mut out = File::create(filename.as_ref())
-                    .wrap_err_with(|| format!("Failed to create output file {:?}", filename.as_ref()))?;
-                file.extract(iso, &mut out)
+                let mut out = File::create(filename)
+                    .wrap_err_with(|| format!("Failed to create output file {:?}", filename))?;
+
+                file.copy_to(iso, &mut out)
                     .wrap_err_with(|| format!("Failed to copy file {:?}", file.info.full_path))?;
+
                 count += 1;
                 callback(count);
             },
@@ -218,34 +217,30 @@ impl Entry {
     }
 
     pub fn as_dir(&self) -> Option<&DirectoryEntry> {
-        if let Self::Directory(ref dir) = self {
-            Some(dir)
-        } else {
-            None
+        match self {
+            Self::Directory(ref dir) => Some(dir),
+            _ => None,
         }
     }
 
     pub fn as_file(&self) -> Option<&FileEntry> {
-        if let Self::File(ref file) = self {
-            Some(file)
-        } else {
-            None
+        match self {
+            Self::File(ref file) => Some(file),
+            _ => None,
         }
     }
 
     pub fn as_dir_mut(&mut self) -> Option<&mut DirectoryEntry> {
-        if let Self::Directory(ref mut dir) = self {
-            Some(dir)
-        } else {
-            None
+        match self {
+            Self::Directory(ref mut dir) => Some(dir),
+            _ => None,
         }
     }
 
     pub fn as_file_mut(&mut self) -> Option<&mut FileEntry> {
-        if let Self::File(ref mut file) = self {
-            Some(file)
-        } else {
-            None
+        match self {
+            Self::File(ref mut file) => Some(file),
+            _ => None,
         }
     }
 
@@ -260,7 +255,7 @@ impl Entry {
 
 impl FileEntry {
     // TODO: rename this
-    pub fn extract(&self, mut reader: impl BufRead + Seek, mut file: impl Write) -> io::Result<()> {
+    pub fn copy_to(&self, mut reader: impl BufRead + Seek, mut file: impl Write) -> io::Result<()> {
         reader.seek(SeekFrom::Start(self.file_offset))?;
         io::copy(
             &mut reader.take(self.size as u64),
