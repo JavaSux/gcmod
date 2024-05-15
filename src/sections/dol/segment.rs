@@ -62,12 +62,7 @@ impl Segment {
     }
 
     // TODO: put in a trait
-    pub fn extract<R, W>(&self, mut iso: R, mut output: W) -> io::Result<()>
-    where
-        Self: Sized,
-        R: Read + Seek,
-        W: Write,
-    {
+    pub fn extract(&self, mut iso: impl Read + Seek, mut output: impl Write) -> io::Result<()> {
         iso.seek(SeekFrom::Start(self.offset))?;
         io::copy(
             &mut iso.take(self.size as u64),

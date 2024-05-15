@@ -35,11 +35,7 @@ pub struct Game {
 }
 
 impl Game {
-
-    pub fn open<R>(mut iso: R, offset: u64) -> io::Result<Game>
-    where
-        R: BufRead + Seek,
-    {
+    pub fn open(mut iso: impl BufRead + Seek, offset: u64) -> io::Result<Game> {
         let header = Header::new(&mut iso, offset)?;
         let apploader = Apploader::new(&mut iso, offset + APPLOADER_OFFSET)?;
         let dol = DOLHeader::new(&mut iso, offset + header.dol_offset)?;
@@ -75,11 +71,7 @@ impl Game {
         ROMLayout(layout)
     }
 
-    pub fn extract<R, P>(&mut self, mut iso: R, path: P) -> eyre::Result<()>
-    where
-        R: BufRead + Seek,
-        P: AsRef<Path>,
-    {
+    pub fn extract(&mut self, mut iso: impl BufRead + Seek, path: impl AsRef<Path>) -> eyre::Result<()> {
         // Not using `create_dir_all` here so it fails if `path` already exists.
         create_dir(path.as_ref())?;
         let sys_data_path = path.as_ref().join("&&systemdata");

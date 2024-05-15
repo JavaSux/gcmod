@@ -283,10 +283,7 @@ fn ls_files(rom_path: impl AsRef<Path>, path: Option<impl AsRef<Path>>, long_for
     Ok(())
 }
 
-fn try_to_open_game<P>(path: P, offset: u64) -> eyre::Result<(Game, BufReader<File>)>
-where
-    P: AsRef<Path>,
-{
+fn try_to_open_game(path: impl AsRef<Path>, offset: u64) -> eyre::Result<(Game, BufReader<File>)> {
     let path = path.as_ref();
     ensure!(path.exists(), "The file {} doesn't exist.", path.display());
 

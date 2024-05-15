@@ -29,10 +29,7 @@ pub struct DOLHeader {
 }
 
 impl DOLHeader {
-    pub fn new<R>(mut file: R, offset: u64) -> io::Result<DOLHeader>
-    where
-        R: Read + Seek,
-    {
+    pub fn new(mut file: impl Read + Seek, offset: u64) -> io::Result<DOLHeader> {
         file.seek(SeekFrom::Start(offset + 0x90))?;
         let mut segments = Vec::new();
 
@@ -114,11 +111,7 @@ impl DOLHeader {
         self.segments.iter()
     }
 
-    pub fn extract<R, W>(mut iso: R, mut file: W, dol_addr: u64) -> io::Result<()>
-    where
-        R: Read + Seek,
-        W: Write,
-    {
+    pub fn extract(mut iso: impl Read + Seek, mut file: impl Write, dol_addr: u64) -> io::Result<()> {
         iso.seek(SeekFrom::Start(dol_addr))?;
         let mut dol_size = 0;
 

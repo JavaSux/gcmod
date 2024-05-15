@@ -25,10 +25,7 @@ pub struct Apploader {
 }
 
 impl Apploader {
-    pub fn new<R>(mut reader: R, offset: u64) -> io::Result<Apploader>
-    where
-        R: Read + Seek,
-    {
+    pub fn new(mut reader: impl Read + Seek, offset: u64) -> io::Result<Apploader> {
         let reader = &mut reader;
         reader.seek(SeekFrom::Start(offset))?;
         let mut date = String::new();
@@ -52,11 +49,7 @@ impl Apploader {
         align((self.code_size + self.trailer_size) as u64, 32) as usize
     }
 
-    pub fn extract<R, W>(mut iso: R, mut file: W) -> io::Result<()>
-    where
-        R: Read + Seek,
-        W: Write,
-    {
+    pub fn extract(mut iso: impl Read + Seek, mut file: impl Write) -> io::Result<()> {
         iso.seek(SeekFrom::Start(APPLOADER_SIZE_ADDR))?;
         let code_size = iso.read_u32::<BigEndian>()? as u64;
         let trailer_size = iso.read_u32::<BigEndian>()? as u64;

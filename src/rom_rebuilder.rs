@@ -63,14 +63,11 @@ struct FSTRebuilder<'a> {
 }
 
 impl<'a> FSTRebuilder<'a> {
-    fn new<P: ?Sized>(root: &'a P, alignment: u64) -> io::Result<FSTRebuilder<'a>>
-    where
-        P: AsRef<Path>,
-    {
-        let apploader = File::open(root.as_ref().join(APPLOADER_PATH))?;
+    fn new(root_path: &'a Path, alignment: u64) -> io::Result<FSTRebuilder<'a>> {
+        let apploader = File::open(root_path.join(APPLOADER_PATH))?;
         let apploader_size = apploader.metadata()?.len() as usize;
 
-        let dol = File::open(root.as_ref().join(DOL_PATH))?;
+        let dol = File::open(root_path.join(DOL_PATH))?;
         let dol_size = dol.metadata()?.len() as usize;
 
         Ok(FSTRebuilder {
@@ -78,7 +75,7 @@ impl<'a> FSTRebuilder<'a> {
             dol_size,
             config: ROMConfig {
                 alignment,
-                root_path: root.as_ref(),
+                root_path,
                 files: vec![],
                 space_used: None,
             },

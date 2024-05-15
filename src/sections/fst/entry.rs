@@ -260,11 +260,7 @@ impl Entry {
 
 impl FileEntry {
     // TODO: rename this
-    pub fn extract<R, W>(&self, mut reader: R, mut file: W) -> io::Result<()>
-    where
-        R: BufRead + Seek,
-        W: Write,
-    {
+    pub fn extract(&self, mut reader: impl BufRead + Seek, mut file: impl Write) -> io::Result<()> {
         reader.seek(SeekFrom::Start(self.file_offset))?;
         io::copy(
             &mut reader.take(self.size as u64),
