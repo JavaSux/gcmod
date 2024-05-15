@@ -1,7 +1,6 @@
 use std::{
     cmp::max,
     io::{self, Read, Seek, SeekFrom, Write},
-    iter::Iterator,
 };
 
 use byteorder::{BigEndian, ReadBytesExt};
