@@ -133,10 +133,10 @@ fn rebuild_iso(
     rebuild_systemdata: bool,
 ) -> eyre::Result<()> {
     let alignment = match alignment {
-        Some(a) => match parse_as_u64(a) {
-            Ok(a) if a >= MIN_ALIGNMENT => a,
+        Some(align) => match parse_as_u64(align) {
+            Ok(align) if align >= MIN_ALIGNMENT => align,
             Ok(_) => bail!("Invalid alignment. Must be >= {MIN_ALIGNMENT}"),
-            Err(e) => Err(e).wrap_err("Invalid alignment")?,
+            Err(err) => Err(err).wrap_err("Invalid alignment")?,
         },
         None => DEFAULT_ALIGNMENT,
     };
@@ -148,9 +148,9 @@ fn rebuild_iso(
     ensure!(root_path.exists(), "Couldn't find root.");
 
     let iso = File::create(iso_path).wrap_err("Failed to create ISO")?;
-    if let Err(e) = ROMRebuilder::rebuild(root_path, alignment, iso, rebuild_systemdata) {
+    if let Err(err) = ROMRebuilder::rebuild(root_path, alignment, iso, rebuild_systemdata) {
         remove_file(iso_path).unwrap();
-        Err(e).wrap_err("Failed to rebuild ISO")
+        Err(err).wrap_err("Failed to rebuild ISO")
     } else {
         Ok(())
     }
@@ -168,36 +168,36 @@ fn get_info(
     } else if let Some(addr) = mem_addr {
         find_mem_addr(path.as_ref(), addr, style)
     } else {
-        let mut f = File::open(path.as_ref())
+        let mut file = File::open(path.as_ref())
             .map(BufReader::new)
             .wrap_err("Couldn't open file")?;
-        let game = Game::open(&mut f, 0);
+        let game = Game::open(&mut file, 0);
         match section_type {
             Some("header") => {
                 game
-                    .map(|g| g.header)
-                    .or_else(|_| Header::new(f, 0))
+                    .map(|game| game.header)
+                    .or_else(|_| Header::new(file, 0))
                     .wrap_err("Invalid iso or header")?
                     .print_info(style);
             },
             Some("dol") => {
                 game
-                    .map(|g| g.dol)
-                    .or_else(|_| DOLHeader::new(f, 0))
+                    .map(|game| game.dol)
+                    .or_else(|_| DOLHeader::new(file, 0))
                     .wrap_err("Invalid iso or DOL")?
                     .print_info(style);
             },
             Some("fst") => {
                 game
-                    .map(|g| g.fst)
-                    .or_else(|_| FST::new(f, 0))
+                    .map(|game| game.fst)
+                    .or_else(|_| FST::new(file, 0))
                     .wrap_err("Invalid iso or file system table")?
                     .print_info(style);
             },
             Some("apploader") | Some("app_loader") | Some("app-loader") => {
                 game
-                    .map(|g| g.apploader)
-                    .or_else(|_| Apploader::new(f, 0))
+                    .map(|game| game.apploader)
+                    .or_else(|_| Apploader::new(file, 0))
                     .wrap_err("Invalid iso or apploader")?
                     .print_info(style);
             },
@@ -217,7 +217,7 @@ fn print_layout(path: impl AsRef<Path>) -> eyre::Result<()> {
 
 fn find_offset(header_path: impl AsRef<Path>, offset: &str, style: NumberStyle) -> eyre::Result<()> {
     let offset = parse_as_u64(offset).ok()
-        .filter(|o| (*o as usize) < ROM_SIZE)
+        .filter(|offset| (*offset as usize) < ROM_SIZE)
         .ok_or_else(|| eyre!(
             "Invalid offset. Offset must be a number > 0 and < {}",
             format_usize(ROM_SIZE, style),
@@ -273,7 +273,7 @@ fn ls_files(rom_path: impl AsRef<Path>, path: Option<impl AsRef<Path>>, long_for
 
     let (game, _) = try_to_open_game(rom_path, 0)?;
     let dir = match path {
-        Some(p) => game.fst.entry_for_path(p).and_then(|e| e.as_dir()),
+        Some(path) => game.fst.entry_for_path(path).and_then(|entry| entry.as_dir()),
         None => Some(game.fst.root()),
     };
 
@@ -292,6 +292,7 @@ where
 
     let iso = File::open(path).wrap_err("Couldn't open ISO file")?;
     let mut iso = BufReader::new(iso);
+
     Game::open(&mut iso, offset)
         .map(|game| (game, iso))
         .wrap_err("Invalid ISO")

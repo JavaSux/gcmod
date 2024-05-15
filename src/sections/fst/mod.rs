@@ -57,7 +57,7 @@ impl FST {
 
         for index in 1..entry_count {
             // Pop the directories that are no longer part of the current path
-            while parents.last().map(|d| d.1) == Some(index) {
+            while parents.last().map(|&(_, next, _)| next) == Some(index) {
                 if let Some((i, _, count)) = parents.pop() {
                     entries[i].as_dir_mut().unwrap().file_count = count;
                 }
@@ -68,25 +68,25 @@ impl FST {
             }
 
             iso.take(ENTRY_SIZE as u64).read_exact(&mut entry_buffer)?;
-            let e = Entry::new(&entry_buffer, index, parents.last().map(|d| d.0))?;
-            match &e {
-                Entry::File(f) => {
+            let entry = Entry::new(&entry_buffer, index, parents.last().map(|&(index, _, _)| index))?;
+            match &entry {
+                Entry::File(file) => {
                     file_count += 1;
-                    total_file_system_size += f.size;
+                    total_file_system_size += file.size;
                 },
-                Entry::Directory(d) => {
-                    parents.push((index, d.next_index, 0));
+                Entry::Directory(dir) => {
+                    parents.push((index, dir.next_index, 0));
                 },
             }
 
-            entries.push(e);
+            entries.push(entry);
         }
 
         let str_tbl_addr = iso.stream_position()?;
 
         let mut end = 0;
-        for e in entries.iter_mut() {
-            e.read_filename(&mut iso, str_tbl_addr)?;
+        for entry in entries.iter_mut() {
+            entry.read_filename(&mut iso, str_tbl_addr)?;
 
             let curr_end = iso.stream_position()?;
             end = max(curr_end, end);
@@ -142,9 +142,9 @@ impl FST {
 
     pub fn write(&self, mut writer: impl Write) -> io::Result<()> {
         let mut sorted_names = BTreeMap::new();
-        for e in &self.entries {
-            e.write(&mut writer)?;
-            sorted_names.insert(e.info().filename_offset, &e.info().name);
+        for entry in &self.entries {
+            entry.write(&mut writer)?;
+            sorted_names.insert(entry.info().filename_offset, &entry.info().name);
         }
         let null_byte = [0];
         for name in sorted_names.values() {
@@ -172,11 +172,11 @@ impl FST {
 
     fn entry_with_name<'a>(&'a self, name: impl AsRef<Path>, dir: &'a DirectoryEntry) -> Option<&'a Entry> {
         let name = name.as_ref();
-        dir.iter_contents(&self.entries).find_map(|e| {
-            if name.as_os_str() == &e.info().name[..] {
-                Some(e)
+        dir.iter_contents(&self.entries).find_map(|entry| {
+            if name.as_os_str() == &entry.info().name[..] {
+                Some(entry)
             } else {
-                e.as_dir().and_then(|subdir| self.entry_with_name(name, subdir))
+                entry.as_dir().and_then(|subdir| self.entry_with_name(name, subdir))
             }
         })
     }
@@ -186,12 +186,12 @@ impl FST {
     }
 
     fn get_full_path(&self, entry: &EntryInfo) -> PathBuf {
-        let mut parent = entry;
+        let mut current = entry;
         let mut names = vec![&entry.name];
 
-        while let Some(p) = self.get_parent_for_entry(parent) {
-            parent = p.info();
-            names.push(&parent.name);
+        while let Some(parent) = self.get_parent_for_entry(current) {
+            current = parent.info();
+            names.push(&current.name);
         }
 
         names.iter().rev().collect()

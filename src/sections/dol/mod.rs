@@ -47,38 +47,38 @@ impl DOLHeader {
             }
             let size = file.read_u32::<BigEndian>()? as usize;
             if size != 0 {
-                let mut s = if is_text {
+                let mut seg = if is_text {
                     Segment::text()
                 } else {
                     Segment::data()
                 };
-                s.size = size;
-                s.seg_num = num;
-                segments.push(s);
+                seg.size = size;
+                seg.seg_num = num;
+                segments.push(seg);
             }
         }
 
         file.seek(SeekFrom::Start(offset))?;
-        for s in &mut segments[..] {
-            let previous = if s.seg_type == SegmentType::Data {
+        for seg in &mut segments[..] {
+            let previous = if seg.seg_type == SegmentType::Data {
                 TEXT_SEG_COUNT as u64
             } else {
                 0
             };
-            file.seek(SeekFrom::Start(offset + (previous + s.seg_num) * 4))?;
-            s.offset = offset + file.read_u32::<BigEndian>()? as u64;
+            file.seek(SeekFrom::Start(offset + (previous + seg.seg_num) * 4))?;
+            seg.offset = offset + file.read_u32::<BigEndian>()? as u64;
         }
 
-        for s in &mut segments[..] {
-            let previous = if s.seg_type == SegmentType::Data {
+        for seg in &mut segments[..] {
+            let previous = if seg.seg_type == SegmentType::Data {
                 TEXT_SEG_COUNT as u64
             } else {
                 0
             };
             file.seek(SeekFrom::Start(
-                offset + 0x48 + (previous + s.seg_num) * 4
+                offset + 0x48 + (previous + seg.seg_num) * 4
             ))?;
-            s.loading_address = file.read_u32::<BigEndian>()? as u64;
+            seg.loading_address = file.read_u32::<BigEndian>()? as u64;
         }
 
         file.seek(SeekFrom::Start(offset + 0xE0))?;
@@ -150,9 +150,9 @@ impl DOLHeader {
     }
 
     pub fn segment_at_addr(&self, mem_addr: u64) -> Option<&Segment> {
-        self.segments.iter().find(|s|
-            s.loading_address <= mem_addr &&
-            mem_addr < s.loading_address + s.size as u64
+        self.segments.iter().find(|seg|
+            seg.loading_address <= mem_addr &&
+            mem_addr < seg.loading_address + seg.size as u64
         )
     }
 }
@@ -164,9 +164,9 @@ impl Section for DOLHeader {
         println!("Header Size: {} bytes", format_usize(DOL_HEADER_LEN, style));
         println!("Entry point: {}", format_u64(self.entry_point, style));
         println!("Segments:");
-        for s in &self.segments {
+        for seg in &self.segments {
             println!();
-            s.print_info(style);
+            seg.print_info(style);
         }
     }
 

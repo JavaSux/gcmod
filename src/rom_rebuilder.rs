@@ -118,10 +118,10 @@ impl<'a> FSTRebuilder<'a> {
 
         // Move this loop/don't iteratate over all these again?
         let mut max_eof = 0;
-        for e in &mut rb_info.entries {
-            if let Some(ref mut f) = e.as_file_mut() {
-                f.file_offset += file_system_offset;
-                max_eof = cmp::max(max_eof, f.file_offset as usize + f.size);
+        for entry in &mut rb_info.entries {
+            if let Some(ref mut file) = entry.as_file_mut() {
+                file.file_offset += file_system_offset;
+                max_eof = cmp::max(max_eof, file.file_offset as usize + file.size);
             }
         }
 
@@ -177,9 +177,9 @@ impl<'a> FSTRebuilder<'a> {
 
     fn add_entries_in_directory(&self, path: impl AsRef<Path>, rb_info: &mut FSTRebuilderInfo) -> io::Result<usize> {
         let mut immediate_children_added = 0;
-        for e in read_dir(path.as_ref())? {
-            let e = e?;
-            let filename = e.file_name();
+        for entry in read_dir(path.as_ref())? {
+            let entry = entry?;
+            let filename = entry.file_name();
             let filename = filename.to_string_lossy();
 
             if FSTRebuilder::is_file_ignored(&filename) {
@@ -197,22 +197,22 @@ impl<'a> FSTRebuilder<'a> {
             // plus 1 for the null byte
             rb_info.filename_offset += info.name.chars().count() as u64 + 1;
 
-            if e.file_type()?.is_dir() {
+            if entry.file_type()?.is_dir() {
                 let parent_index = info.directory_index.unwrap_or(0);
-                let entry = Entry::Directory(DirectoryEntry {
+                let dir_entry = Entry::Directory(DirectoryEntry {
                     info,
                     parent_index,
                     next_index: 0,
                     file_count: 0,
                 });
-                self.rebuild_dir_info(e.path(), entry, rb_info)?;
+                self.rebuild_dir_info(entry.path(), dir_entry, rb_info)?;
             } else {
                 // This `file_offset` is not the final offset.
                 // It'd be added to later.
                 let entry = Entry::File(FileEntry {
                     info,
                     file_offset: rb_info.file_system_size,
-                    size: e.metadata()?.len() as usize,
+                    size: entry.metadata()?.len() as usize,
                 });
                 rb_info.add_entry(entry);
             }

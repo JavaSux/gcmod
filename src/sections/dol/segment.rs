@@ -8,10 +8,10 @@ pub enum SegmentType {
 }
 
 impl SegmentType {
-    pub fn fmt(&self, f: &mut fmt::Formatter, seg_num: u64) -> fmt::Result {
+    pub fn fmt(&self, fmt: &mut fmt::Formatter, seg_num: u64) -> fmt::Result {
         match self {
-            Self::Text => write!(f, ".text{seg_num}"),
-            Self::Data => write!(f, ".data{seg_num}"),
+            Self::Text => write!(fmt, ".text{seg_num}"),
+            Self::Data => write!(fmt, ".data{seg_num}"),
         }
     }
 }
@@ -57,8 +57,8 @@ impl Segment {
             else if let Some(suffix) = name.strip_prefix(".data") { (SegmentType::Data, suffix) }
             else { return None; };
 
-        let n = parse_as_u64(suffix).ok()?;
-        Some((kind, n))
+        let num = parse_as_u64(suffix).ok()?;
+        Some((kind, num))
     }
 
     // TODO: put in a trait
@@ -77,8 +77,8 @@ impl Segment {
 }
 
 impl fmt::Display for Segment {
-    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        self.seg_type.fmt(f, self.seg_num)
+    fn fmt(&self, fmt: &mut fmt::Formatter<'_>) -> fmt::Result {
+        self.seg_type.fmt(fmt, self.seg_num)
     }
 }
 

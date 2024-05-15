@@ -62,12 +62,12 @@ impl Game {
         layout.push(&self.header);
         layout.push(&self.apploader);
         layout.push(&self.dol);
-        for s in self.dol.iter_segments() {
-            layout.push(s);
+        for seg in self.dol.iter_segments() {
+            layout.push(seg);
         }
         layout.push(&self.fst);
-        for f in self.fst.entries.iter().filter_map(|e| e.as_file()) {
-            layout.push(f);
+        for entry in self.fst.entries.iter().filter_map(|entry| entry.as_file()) {
+            layout.push(entry);
         }
 
         layout.sort_unstable_by_key(|info| info.start());
@@ -146,17 +146,17 @@ impl Game {
                 FST::extract(iso, &mut File::create(output)?, self.fst.offset)
                     .map(|_| true).wrap_err("Failed to extract FST"),
             _ => {
-                if let Some(e) = self.fst.entry_for_path(filename) {
-                    e.extract_with_name(
+                if let Some(entry) = self.fst.entry_for_path(filename) {
+                    entry.extract_with_name(
                         output, &self.fst.entries,
                         iso,
                         &|_| {},
                     ).map(|_| true)
-                } else if let Some((t, n)) =
+                } else if let Some((seg_type, num)) =
                     Segment::parse_segment_name(filename)
                 {
-                    if let Some(s) = self.dol.find_segment(t, n) {
-                        s.extract(iso, &mut File::create(output)?)
+                    if let Some(segment) = self.dol.find_segment(seg_type, num) {
+                        segment.extract(iso, &mut File::create(output)?)
                             .map(|_| true).wrap_err("Failed to extract DOL")
                     } else {
                         Ok(false)
@@ -198,11 +198,11 @@ impl Game {
     }
 
     pub fn print_directory(&self, dir: &DirectoryEntry, long_format: bool) {
-        for e in dir.iter_contents(&self.fst.entries) {
+        for entry in dir.iter_contents(&self.fst.entries) {
             if long_format {
-                println!("{}", e.format_long());
+                println!("{}", entry.format_long());
             } else {
-                println!("{}", e.info().full_path.display());
+                println!("{}", entry.info().full_path.display());
             }
         }
     }
@@ -212,7 +212,7 @@ pub struct ROMLayout<'a>(Vec<&'a dyn Section>);
 
 impl<'a> ROMLayout<'a> {
     pub fn find_offset(&'a self, offset: u64) -> Option<&'a dyn Section> {
-        self.0.binary_search_by(|s| s.compare_offset(offset))
+        self.0.binary_search_by(|section| section.compare_offset(offset))
             .ok()
             .map(|i| self.0[i])
     }
