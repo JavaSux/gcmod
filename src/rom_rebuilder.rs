@@ -63,14 +63,14 @@ struct FSTRebuilder<'a> {
 }
 
 impl<'a> FSTRebuilder<'a> {
-    fn new(root_path: &'a Path, alignment: u64) -> io::Result<FSTRebuilder<'a>> {
+    fn new(root_path: &'a Path, alignment: u64) -> io::Result<Self> {
         let apploader = File::open(root_path.join(APPLOADER_PATH))?;
         let apploader_size = apploader.metadata()?.len() as usize;
 
         let dol = File::open(root_path.join(DOL_PATH))?;
         let dol_size = dol.metadata()?.len() as usize;
 
-        Ok(FSTRebuilder {
+        Ok(Self {
             apploader_size,
             dol_size,
             config: ROMConfig {
@@ -270,7 +270,7 @@ impl<'a> FileSystemRebuilder<'a> {
         self.config.files.push((self.fst.offset, fst_path));
         self.config.files.push((0, header_path));
 
-        FileSystemRebuilder::fill_files(&mut self.config.files, self.fst.entries[0].as_dir().unwrap(), self.config.root_path, &self.fst);
+        Self::fill_files(&mut self.config.files, self.fst.entries[0].as_dir().unwrap(), self.config.root_path, &self.fst);
 
         self.config.files.sort();
 

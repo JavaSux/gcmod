@@ -90,9 +90,9 @@ pub struct HeaderInformation {
 }
 
 impl HeaderInformation {
-    pub fn new(mut file: impl Read + Seek, offset: u64) -> io::Result<HeaderInformation> {
+    pub fn new(mut file: impl Read + Seek, offset: u64) -> io::Result<Self> {
         file.seek(SeekFrom::Start(offset))?;
-        Ok(HeaderInformation {
+        Ok(Self {
             debug_monitor_size: file.read_u32::<BigEndian>()?,
             simulated_memory_size: file.read_u32::<BigEndian>()?,
             argument_offset: file.read_u32::<BigEndian>()?,
@@ -118,7 +118,7 @@ impl HeaderInformation {
 }
 
 impl Header {
-    pub fn new(mut file: impl BufRead + Seek, offset: u64) -> io::Result<Header> {
+    pub fn new(mut file: impl BufRead + Seek, offset: u64) -> io::Result<Self> {
         file.seek(SeekFrom::Start(offset))?;
         let mut game_code = String::with_capacity(GAME_CODE_SIZE);
         file.by_ref().take(GAME_CODE_SIZE as u64)
@@ -177,7 +177,7 @@ impl Header {
         let pos = file.stream_position()?;
         let information = HeaderInformation::new(file, pos)?;
 
-        Ok(Header {
+        Ok(Self {
             game_code,
             maker_code,
             disk_id,

@@ -31,8 +31,8 @@ pub struct Segment {
 }
 
 impl Segment {
-    pub fn text() -> Segment {
-        Segment {
+    pub fn text() -> Self {
+        Self {
             offset: 0,
             size: 0,
             loading_address: 0,
@@ -41,8 +41,8 @@ impl Segment {
         }
     }
 
-    pub fn data() -> Segment {
-        Segment {
+    pub fn data() -> Self {
+        Self {
             offset: 0,
             size: 0,
             loading_address: 0,

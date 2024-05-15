@@ -29,7 +29,7 @@ pub struct DOLHeader {
 }
 
 impl DOLHeader {
-    pub fn new(mut file: impl Read + Seek, offset: u64) -> io::Result<DOLHeader> {
+    pub fn new(mut file: impl Read + Seek, offset: u64) -> io::Result<Self> {
         file.seek(SeekFrom::Start(offset + 0x90))?;
         let mut segments = Vec::new();
 
@@ -84,7 +84,7 @@ impl DOLHeader {
         let dol_size = segments.iter()
             .map(|s| (s.offset - offset) as usize + s.size).max().unwrap();
 
-        Ok(DOLHeader {
+        Ok(Self {
             offset,
             dol_size,
             entry_point,

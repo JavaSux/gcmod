@@ -34,7 +34,7 @@ pub struct FST {
 }
 
 impl FST {
-    pub fn new(mut iso: impl BufRead + Seek, offset: u64) -> io::Result<FST> {
+    pub fn new(mut iso: impl BufRead + Seek, offset: u64) -> io::Result<Self> {
         let mut iso = &mut iso;
         iso.seek(SeekFrom::Start(offset))?;
 
@@ -94,7 +94,7 @@ impl FST {
 
         let size = (end - offset) as usize;
 
-        let mut fst = FST {
+        let mut fst = Self {
             offset,
             file_count,
             total_file_system_size,

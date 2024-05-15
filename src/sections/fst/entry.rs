@@ -72,7 +72,7 @@ impl Entry {
         entry: &[u8],
         index: usize,
         directory_index: Option<usize>,
-    ) -> io::Result<Entry> {
+    ) -> io::Result<Self> {
         // TODO: don't use unwrap when this is implemented
         // https://github.com/rust-lang/rfcs/issues/935
         let filename_offset =
@@ -91,12 +91,12 @@ impl Entry {
         };
 
         Ok(match entry[0] {
-            0 => Entry::File(FileEntry {
+            0 => Self::File(FileEntry {
                 info,
                 file_offset: f2 as u64,
                 size: f3 as usize,
             }),
-            1 => Entry::Directory(DirectoryEntry {
+            1 => Self::Directory(DirectoryEntry {
                 info,
                 parent_index: f2 as usize,
                 next_index: f3 as usize,
@@ -114,8 +114,8 @@ impl Entry {
         write_int_to_buffer(name_offset, &mut buf[1..4]);
 
         let (f2, f3) = match self {
-            Entry::File(ref file) => (file.file_offset, file.size as u64),
-            Entry::Directory(ref dir) => (dir.parent_index as u64, dir.next_index as u64),
+            Self::File(ref file) => (file.file_offset, file.size as u64),
+            Self::Directory(ref dir) => (dir.parent_index as u64, dir.next_index as u64),
         };
 
         write_int_to_buffer(f2, &mut buf[4..8]);
@@ -126,15 +126,15 @@ impl Entry {
 
     pub fn info(&self) -> &EntryInfo {
         match self {
-            Entry::File(ref file) => &file.info,
-            Entry::Directory(ref dir) => &dir.info,
+            Self::File(ref file) => &file.info,
+            Self::Directory(ref dir) => &dir.info,
         }
     }
 
     pub fn info_mut(&mut self) -> &mut EntryInfo {
         match self {
-            Entry::File(ref mut file) => &mut file.info,
-            Entry::Directory(ref mut dir) => &mut dir.info,
+            Self::File(ref mut file) => &mut file.info,
+            Self::Directory(ref mut dir) => &mut dir.info,
         }
     }
 
@@ -142,7 +142,7 @@ impl Entry {
     pub fn extract_with_name(
         &self,
         filename: impl AsRef<Path>,
-        fst: &[Entry],
+        fst: &[Self],
         mut iso: impl BufRead + Seek,
         mut callback: impl FnMut(usize),
     ) -> eyre::Result<usize> {
@@ -152,7 +152,7 @@ impl Entry {
     fn extract_with_name_and_count(
         &self,
         filename: impl AsRef<Path>,
-        fst: &[Entry],
+        fst: &[Self],
         iso: &mut (impl BufRead + Seek),
         start_count: usize,
         callback: &mut impl FnMut(usize),
@@ -160,7 +160,7 @@ impl Entry {
         let mut count = start_count;
 
         match self {
-            Entry::Directory(ref dir) => {
+            Self::Directory(ref dir) => {
                 create_dir_all(filename.as_ref())
                     .wrap_err_with(|| format!("Failed to create output directory {:?})", filename.as_ref()))?;
                 for entry in dir.iter_contents(fst) {
@@ -173,7 +173,7 @@ impl Entry {
                     )?;
                 }
             },
-            Entry::File(ref file) => {
+            Self::File(ref file) => {
                 let mut out = File::create(filename.as_ref())
                     .wrap_err_with(|| format!("Failed to create output file {:?}", filename.as_ref()))?;
                 file.extract(iso, &mut out)
@@ -210,15 +210,15 @@ impl Entry {
 
     pub fn format_long(&self) -> String {
         let (ftype, size) = match self {
-            Entry::File(file) => ('-', file.size),
-            Entry::Directory(dir) => ('d', dir.file_count),
+            Self::File(file) => ('-', file.size),
+            Self::Directory(dir) => ('d', dir.file_count),
         };
         // 2^32 - 1 is 10 digits wide in decimal
         format!("{} {:>10} {}", ftype, size, self.info().full_path.to_string_lossy())
     }
 
     pub fn as_dir(&self) -> Option<&DirectoryEntry> {
-        if let Entry::Directory(ref dir) = self {
+        if let Self::Directory(ref dir) = self {
             Some(dir)
         } else {
             None
@@ -226,7 +226,7 @@ impl Entry {
     }
 
     pub fn as_file(&self) -> Option<&FileEntry> {
-        if let Entry::File(ref file) = self {
+        if let Self::File(ref file) = self {
             Some(file)
         } else {
             None
@@ -234,7 +234,7 @@ impl Entry {
     }
 
     pub fn as_dir_mut(&mut self) -> Option<&mut DirectoryEntry> {
-        if let Entry::Directory(ref mut dir) = self {
+        if let Self::Directory(ref mut dir) = self {
             Some(dir)
         } else {
             None
@@ -242,7 +242,7 @@ impl Entry {
     }
 
     pub fn as_file_mut(&mut self) -> Option<&mut FileEntry> {
-        if let Entry::File(ref mut file) = self {
+        if let Self::File(ref mut file) = self {
             Some(file)
         } else {
             None
@@ -282,8 +282,8 @@ pub struct DirectoryIter<'a> {
 }
 
 impl<'a> DirectoryIter<'a> {
-    fn new(dir: &'a DirectoryEntry, fst: &'a [Entry]) -> DirectoryIter<'a> {
-        DirectoryIter {
+    fn new(dir: &'a DirectoryEntry, fst: &'a [Entry]) -> Self {
+        Self {
             dir,
             fst,
             current_index: dir.info.index + 1,
